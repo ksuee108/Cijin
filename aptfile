@@ -1,3 +1,0 @@
-# 安裝 OpenGL 依賴，解決 OpenCV / Albumentations 的 libGL.so.1 問題
-libgl1-mesa-glx
-libglib2.0-0
