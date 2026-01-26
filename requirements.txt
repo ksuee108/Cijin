@@ -1,0 +1,10 @@
+streamlit
+protobuf==3.20.3
+torch
+albumentations
+torchvision
+Pillow 
+numpy
+OpenCV-python
+scikit-learn
+pandas
