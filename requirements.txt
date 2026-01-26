@@ -1,6 +1,6 @@
 python-3.10.12
 streamlit
-protobuf==3.20.3
+protobuf
 torch
 albumentations
 torchvision
