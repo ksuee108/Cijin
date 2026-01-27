@@ -100,7 +100,7 @@ if uploaded_files and model_option:
                 out_dir_model = os.path.join("model", 'best_model-{}.pth'.format(model))
 
                 net  = model_dict[model](num_classes=len(ALL_CLASSES))
-                checkpoint = torch.load(out_dir_model, map_location=device)
+                checkpoint = torch.load(out_dir_model, map_location=device, weights_only=False)
                 if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
                     net.load_state_dict(checkpoint["model_state_dict"])
                 else:

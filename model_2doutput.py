@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision.models.segmentation import deeplabv3_resnet50
  
+#-----------------------------ResNet50-----------------------------------------------
 def prepare_50_model(num_classes=2):
     print("Preparing DeepLabV3 ResNet50 model...")
     model = deeplabv3_resnet50(weights='DEFAULT')
@@ -12,12 +13,6 @@ def prepare_50_model(num_classes=2):
         nn.ReLU(),
         nn.Dropout(0.3),
         nn.Conv2d(1024, 512, kernel_size=3, padding=1),
-        nn.ReLU(),
-        nn.Dropout(0.3),
-        nn.Conv2d(512, 128, kernel_size=3, padding=1),
-        nn.ReLU(),
-        nn.Dropout(0.3),
-        nn.Conv2d(128, 512, kernel_size=3, padding=1),
         nn.ReLU(),
         nn.Dropout(0.3),
         nn.Conv2d(512, 256, kernel_size=3, padding=1),
@@ -32,77 +27,28 @@ def prepare_50_model(num_classes=2):
 Uncomment the following lines to train on the DeepLabV3 ResNet101 model.
 """
 # import torch.nn as nn
-
+#-----------------------------ResNet101-----------------------------------------------
 from torchvision.models.segmentation import deeplabv3_resnet101
  
 def prepare_101_model(num_classes=2):
     print("Preparing DeepLabV3 ResNet101 model...")
     model = deeplabv3_resnet101(weights='DEFAULT')
     model.classifier = nn.Sequential(
-    nn.Conv2d(2048, 1024, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.Dropout(0.3),
-    nn.Conv2d(1024, 512, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.Dropout(0.3),
-    nn.Conv2d(512, 128, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.Dropout(0.3),
-    nn.Conv2d(128, 512, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.Dropout(0.3),
-    nn.Conv2d(512, 256, kernel_size=3, padding=1),
-    nn.ReLU(),
-    nn.Dropout(0.3),
-    nn.Conv2d(256, num_classes, kernel_size=1)
+        nn.Conv2d(2048, 1024, kernel_size=3, padding=1),
+        nn.ReLU(),
+        nn.Dropout(0.3),
+        nn.Conv2d(1024, 512, kernel_size=3, padding=1),
+        nn.ReLU(),
+        nn.Dropout(0.3),
+        nn.Conv2d(512, 256, kernel_size=3, padding=1),
+        nn.ReLU(),
+        nn.Dropout(0.3),
+        nn.Conv2d(256, num_classes, kernel_size=1)
 )
     model.aux_classifier[4] = nn.Conv2d(256, num_classes, 1)
     return model
 
-
-class UNetDecoder(nn.Module):
-    def __init__(self, in_channels=2048, num_classes=2):
-        super(UNetDecoder, self).__init__()
-
-        self.up1 = nn.Sequential(
-            nn.ConvTranspose2d(in_channels, 1024, kernel_size=2, stride=2),  # x2
-            nn.ReLU(inplace=True),
-            nn.Conv2d(1024, 1024, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-        )
-        self.up2 = nn.Sequential(
-            nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-        )
-        self.up3 = nn.Sequential(
-            nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-        )
-        self.up4 = nn.Sequential(
-            nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-        )
-        self.final = nn.Conv2d(128, num_classes, kernel_size=1)
-
-    def forward(self, x):
-        x = self.up1(x)  # 1/16 -> 1/8
-        x = self.up2(x)  # 1/8 -> 1/4
-        x = self.up3(x)  # 1/4 -> 1/2
-        x = self.up4(x)  # 1/2 -> 1/1 (full resolution)
-        return self.final(x)
-
-def prepare_unet_classifier_model(num_classes=2):
-    print("Preparing DeepLabV3 ResNet101 model with UNet decoder...")
-    model = deeplabv3_resnet101(weights='DEFAULT')
-    model.classifier = UNetDecoder(in_channels=2048, num_classes=num_classes)
-    model.aux_classifier[4] = nn.Conv2d(256, num_classes, 1)
-    return model
+#-----------------------------MobileNetV3-----------------------------------------------
 
 """
 Uncomment the following lines to train on the DeepLabV3 mobilNet model.
@@ -126,12 +72,6 @@ def prepare_mobilenet_model(num_classes=2):
         nn.ReLU(),
         nn.Dropout(0.3),
         nn.Conv2d(1024, 512, kernel_size=3, padding=1),
-        nn.ReLU(),
-        nn.Dropout(0.3),
-        nn.Conv2d(512, 128, kernel_size=3, padding=1),
-        nn.ReLU(),
-        nn.Dropout(0.3),
-        nn.Conv2d(128, 512, kernel_size=3, padding=1),
         nn.ReLU(),
         nn.Dropout(0.3),
         nn.Conv2d(512, 256, kernel_size=3, padding=1),
