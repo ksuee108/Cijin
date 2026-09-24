@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import streamlit as st
 import torch
-import pidinet as pidinet_models
+import model.pidinet as pidinet_models
 
 import glob
 import os
