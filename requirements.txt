@@ -9,3 +9,19 @@ scikit-learn
 protobuf==3.20.3
 streamlit
 altair==4.2.2
+streamlit_drawable_canvas
+scikit-image
+tqdm
+ema-pytorch
+accelerate
+fvcore
+tensorboard
+einops
+pytorch-lightning==1.9.3 
+scipy
+thop
+timm==0.6.12
+omegaconf
+numpy==1.23.5
+
+torchaudio --index-url https://download.pytorch.org/whl/cu126

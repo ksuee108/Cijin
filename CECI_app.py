@@ -108,10 +108,10 @@ if uploaded_files and model_option:
                 net = net.to(device)
                 net.eval()
                 aug_pipeline = A.Compose([
-                    A.Resize(128, 128),                     # 調整影像大小
+                    A.Resize(512, 512),                     # 調整影像大小
                 ])
                 metrics_list = []
-                patch_size = 128
+                patch_size = 512
 
                 h, w = Image.open(uploaded_file).size
                 original_np = np.array(original_image)

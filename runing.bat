@@ -39,7 +39,7 @@ IF NOT EXIST "%VENV_NAME%\Scripts\activate.bat" (
     echo Virtual environment "%VENV_NAME%" does not exist, creating automatically...
     
     REM Create virtual environment
-    python -m venv %VENV_NAME%
+    python -m amp_env %VENV_NAME%
     IF ERRORLEVEL 1 (
         echo Failed to create virtual environment, please confirm Python is installed.
         pause
