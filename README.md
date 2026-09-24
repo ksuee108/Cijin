@@ -4,4 +4,4 @@
 若執行的電腦沒有安裝 python ，便自動下載 python 3.10.12 版本。
 
 
- [download](https://drive.google.com/file/d/1gp3NbUZnz9ScXJfR9FYg3Sh9IxrMFN-5/view?usp=sharing)
+ 從google drive [download](https://drive.google.com/file/d/1gp3NbUZnz9ScXJfR9FYg3Sh9IxrMFN-5/view?usp=sharing) 所有模型檔
