@@ -2,3 +2,6 @@
 
 直接點擊 runing.bat 執行檔自動執行 python 程式。
 若執行的電腦沒有安裝 python ，便自動下載 python 3.10.12 版本。
+
+
+ [download](https://github.com/GuHuangAI/DiffusionEdge/releases/download/v1.1/bsds.pt)
