@@ -22,8 +22,8 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 user_home = os.path.expanduser("~")
 
-st.set_page_config(page_title="台灣世曦 港灣部 岸線偵測系統", layout="wide")
-st.title("台灣世曦 港灣部 岸線偵測系統")
+st.set_page_config(page_title="台灣世曦 港灣部 岸線偵測與預測系統", layout="wide")
+st.title("台灣世曦 港灣部 岸線偵測與預測系統")
 
 st.markdown("""本系統為 台灣世曦 **港灣部** *深度學習於岸線變遷之應用與分析預測模組之研發－以旗津海岸為例 (V)*
             一案之應用平台，旨在提供CNN，U-NET，Conv-LSTM，DeepLabV3-ResNet50，DeepLabV3-ResNet101，DeepLabV3-outputs_MobileNet六種模型的岸線偵測功能。""")
@@ -92,9 +92,9 @@ if uploaded_files and model_option:
         original_image = Image.open(uploaded_file).convert("RGB")
         augmented_np = aug(image=np.array(original_image))["image"]
         original_image = Image.fromarray(augmented_np)
-        st.image(original_image, caption=f"上傳的影像: {uploaded_file.name}", use_column_width=True)
+        st.image(original_image, caption=f"上傳的影像: {uploaded_file.name}", use_container_width=True)
         
-        if st.button("開始偵測"):
+        if st.button("開始偵測", key="detect_button_main"):
             st.markdown("### 偵測結果:")
             for model in model_option:
                 out_dir_model = os.path.join("model", 'best_model-{}.pth'.format(model))

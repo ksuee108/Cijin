@@ -65,129 +65,152 @@ for key, default_value in DEFAULT_SESSION_STATE.items():
 # Title
 # ============================================================
 
-st.title("台灣世曦 港灣部 岸線偵測系統")
+st.title("台灣世曦 港灣部 岸線偵測與預測系統")
+main_tab1, main_tab2, main_tab3 = st.tabs(["岸線偵測", "岸線變遷分析", "關於本系統"])
 
-st.markdown(
+with main_tab1:
+    st.header("岸線偵測模組")
+    st.markdown(
+        """
+    本系統採用 **DeepLabV3-ResNet101** 進行語意分割，並支援 **AI 輔助人工修正**
+    （操作方式類似 [CVAT](https://www.cvat.ai/) 的語意分割標註工具）。
+
+    操作方式：
+
+    1. 上傳影像
+    2.（選用）拖曳矩形框剪裁影像，去除不需要的範圍
+    3. 在影像上以滑鼠拖曳建立矩形 ROI
+    4. 按下「開始語意分割」，AI 模型僅針對 ROI 進行推論
+    5. 在「人工修正」區塊選擇類別，使用多邊形或筆刷工具修正 AI 分割結果
+    6. 下載修正後的 segmentation mask / overlay / 類別索引遮罩
     """
-本系統採用 **DeepLabV3-ResNet101** 進行語意分割，並支援 **AI 輔助人工修正**
-（操作方式類似 [CVAT](https://www.cvat.ai/) 的語意分割標註工具）。
-
-操作方式：
-
-1. 上傳影像
-2.（選用）拖曳矩形框剪裁影像，去除不需要的範圍
-3. 在影像上以滑鼠拖曳建立矩形 ROI
-4. 按下「開始語意分割」，AI 模型僅針對 ROI 進行推論
-5. 在「人工修正」區塊選擇類別，使用多邊形或筆刷工具修正 AI 分割結果
-6. 下載修正後的 segmentation mask / overlay / 類別索引遮罩
-"""
-)
-
-
-# ============================================================
-# Image Upload
-# ============================================================
-
-uploaded_file = st.file_uploader(
-    "請上傳影像",
-    type=["jpg", "jpeg", "png", "bmp", "tif", "tiff"],
-    accept_multiple_files=False
-)
-
-
-# ============================================================
-# Main
-# ============================================================
-
-if uploaded_file is not None:
-
-    # --------------------------------------------------------
-    # Load & adjust image
-    # --------------------------------------------------------
-
-    original_image = Image.open(uploaded_file).convert("RGB")
-
-    full_width, full_height = original_image.size
-
-    MAX_CANVAS_WIDTH = 1200
-    MAX_CANVAS_HEIGHT = 700
-
-    crop_scale = min(
-        MAX_CANVAS_WIDTH / full_width,
-        MAX_CANVAS_HEIGHT / full_height,
-        1.0
     )
 
-    crop_canvas_width = int(full_width * crop_scale)
-    crop_canvas_height = int(full_height * crop_scale)
 
-    # ========================================================
-    # ① 剪裁影像（選用）
-    # ========================================================
+    # ============================================================
+    # Image Upload
+    # ============================================================
 
-    st.subheader("① 剪裁影像（選用）")
-
-    st.info(
-        "如需先去除影像中不需要的邊緣或範圍，可在下方拖曳矩形框選擇要保留的區域，"
-        "按「套用剪裁」後，後續的 ROI 選取與語意分割都會以剪裁後的影像為準。"
-        "若不需要剪裁，直接略過此步驟即可。"
+    uploaded_file = st.file_uploader(
+        "請上傳影像",
+        type=["jpg", "jpeg", "png", "bmp", "tif", "tiff"],
+        accept_multiple_files=False
     )
 
-    crop_background = (
-        st.session_state.cropped_image
-        if st.session_state.cropped_image is not None
-        else original_image
-    )
 
-    crop_canvas_result = st_canvas(
-        fill_color="rgba(0, 200, 0, 0.15)",
-        stroke_width=3,
-        stroke_color="#00C800",
-        background_image=crop_background,
-        update_streamlit=True,
-        height=crop_canvas_height,
-        width=crop_canvas_width,
-        drawing_mode="rect",
-        point_display_radius=0,
-        key=f"crop_canvas_{st.session_state.crop_canvas_key}"
-    )
+    # ============================================================
+    # Main
+    # ============================================================
 
-    crop_apply_col, crop_reset_col, crop_info_col = st.columns([1, 1, 2])
+    if uploaded_file is not None:
 
-    with crop_apply_col:
-        crop_apply_button = st.button(
-            "套用剪裁", use_container_width=True
+        # --------------------------------------------------------
+        # Load & adjust image
+        # --------------------------------------------------------
+
+        original_image = Image.open(uploaded_file).convert("RGB")
+
+        full_width, full_height = original_image.size
+
+        MAX_CANVAS_WIDTH = 1200
+        MAX_CANVAS_HEIGHT = 700
+
+        crop_scale = min(
+            MAX_CANVAS_WIDTH / full_width,
+            MAX_CANVAS_HEIGHT / full_height,
+            1.0
         )
 
-    with crop_reset_col:
-        crop_reset_button = st.button(
-            "清除剪裁", use_container_width=True
+        crop_canvas_width = int(full_width * crop_scale)
+        crop_canvas_height = int(full_height * crop_scale)
+
+        # ========================================================
+        # ① 剪裁影像（選用）
+        # ========================================================
+
+        st.subheader("① 剪裁影像（選用）")
+
+        st.info(
+            "如需先去除影像中不需要的邊緣或範圍，可在下方拖曳矩形框選擇要保留的區域，"
+            "按「套用剪裁」後，後續的 ROI 選取與語意分割都會以剪裁後的影像為準。"
+            "若不需要剪裁，直接略過此步驟即可。"
         )
 
-    if crop_apply_button:
-
-        crop_source = (
+        crop_background = (
             st.session_state.cropped_image
             if st.session_state.cropped_image is not None
             else original_image
         )
-        crop_src_width, crop_src_height = crop_source.size
 
-        crop_bbox = parse_rect_bbox_from_canvas(
-            crop_canvas_result,
-            crop_src_width,
-            crop_src_height,
-            crop_canvas_width,
-            crop_canvas_height
+        crop_canvas_result = st_canvas(
+            fill_color="rgba(0, 200, 0, 0.15)",
+            stroke_width=3,
+            stroke_color="#00C800",
+            background_image=crop_background,
+            update_streamlit=True,
+            height=crop_canvas_height,
+            width=crop_canvas_width,
+            drawing_mode="rect",
+            point_display_radius=0,
+            key=f"crop_canvas_{st.session_state.crop_canvas_key}"
         )
 
-        if crop_bbox is None:
-            st.warning("請先在影像上拖曳矩形框，選擇要保留的剪裁範圍。")
+        crop_apply_col, crop_reset_col, crop_info_col = st.columns([1, 1, 2])
 
-        else:
-            st.session_state.cropped_image = crop_source.crop(crop_bbox)
+        with crop_apply_col:
+            crop_apply_button = st.button(
+                "套用剪裁", use_container_width=True
+            )
 
-            # 影像尺寸已改變，先前的 ROI / AI 結果不再對應，一併清除
+        with crop_reset_col:
+            crop_reset_button = st.button(
+                "清除剪裁", use_container_width=True
+            )
+
+        if crop_apply_button:
+
+            crop_source = (
+                st.session_state.cropped_image
+                if st.session_state.cropped_image is not None
+                else original_image
+            )
+            crop_src_width, crop_src_height = crop_source.size
+
+            crop_bbox = parse_rect_bbox_from_canvas(
+                crop_canvas_result,
+                crop_src_width,
+                crop_src_height,
+                crop_canvas_width,
+                crop_canvas_height
+            )
+
+            if crop_bbox is None:
+                st.warning("請先在影像上拖曳矩形框，選擇要保留的剪裁範圍。")
+
+            else:
+                st.session_state.cropped_image = crop_source.crop(crop_bbox)
+
+                # 影像尺寸已改變，先前的 ROI / AI 結果不再對應，一併清除
+                st.session_state.roi = None
+                st.session_state.prediction = None
+                st.session_state.original_prediction = None
+                st.session_state.mask_history = []
+                st.session_state.overlay = None
+                st.session_state.segmentation = None
+                st.session_state.roi_base_image = None
+                st.session_state.edge_map = None
+                st.session_state.edge_skeleton = None
+                st.session_state.edge_model_used = None
+                st.session_state.canvas_key += 1
+                st.session_state.correction_canvas_key += 1
+                st.session_state.crop_canvas_key += 1
+
+                st.rerun()
+
+        if crop_reset_button and st.session_state.cropped_image is not None:
+
+            st.session_state.cropped_image = None
+
             st.session_state.roi = None
             st.session_state.prediction = None
             st.session_state.original_prediction = None
@@ -204,479 +227,553 @@ if uploaded_file is not None:
 
             st.rerun()
 
-    if crop_reset_button and st.session_state.cropped_image is not None:
+        if st.session_state.cropped_image is not None:
+            st.success(
+                f"目前已套用剪裁，影像尺寸：{st.session_state.cropped_image.size[0]} × "
+                f"{st.session_state.cropped_image.size[1]}"
+            )
 
-        st.session_state.cropped_image = None
+        # --------------------------------------------------------
+        # working_image：後續 ROI 選取、AI 推論、人工修正、下載
+        # 都以這張（可能已剪裁的）影像為準
+        # --------------------------------------------------------
 
-        st.session_state.roi = None
-        st.session_state.prediction = None
-        st.session_state.original_prediction = None
-        st.session_state.mask_history = []
-        st.session_state.overlay = None
-        st.session_state.segmentation = None
-        st.session_state.roi_base_image = None
-        st.session_state.edge_map = None
-        st.session_state.edge_skeleton = None
-        st.session_state.edge_model_used = None
-        st.session_state.canvas_key += 1
-        st.session_state.correction_canvas_key += 1
-        st.session_state.crop_canvas_key += 1
-
-        st.rerun()
-
-    if st.session_state.cropped_image is not None:
-        st.success(
-            f"目前已套用剪裁，影像尺寸：{st.session_state.cropped_image.size[0]} × "
-            f"{st.session_state.cropped_image.size[1]}"
+        working_image = (
+            st.session_state.cropped_image
+            if st.session_state.cropped_image is not None
+            else original_image
         )
 
-    # --------------------------------------------------------
-    # working_image：後續 ROI 選取、AI 推論、人工修正、下載
-    # 都以這張（可能已剪裁的）影像為準
-    # --------------------------------------------------------
+        width, height = working_image.size
 
-    working_image = (
-        st.session_state.cropped_image
-        if st.session_state.cropped_image is not None
-        else original_image
-    )
-
-    width, height = working_image.size
-
-    scale = min(
-        MAX_CANVAS_WIDTH / width,
-        MAX_CANVAS_HEIGHT / height,
-        1.0
-    )
-
-    canvas_width = int(width * scale)
-    canvas_height = int(height * scale)
-
-    # 畫布座標 → 原始影像座標 的縮放係數
-    scale_x = width / float(canvas_width)
-    scale_y = height / float(canvas_height)
-
-    # ========================================================
-    # ② 選擇語意分割區域 (ROI)
-    # ========================================================
-
-    st.markdown("---")
-    st.subheader("② 選擇語意分割區域")
-
-    st.info("請使用滑鼠在影像上拖曳矩形框，選擇需要進行 AI 語意分割的區域。")
-
-    canvas_result = st_canvas(
-        fill_color="rgba(255, 0, 0, 0.15)",
-        stroke_width=3,
-        stroke_color="#FF0000",
-        background_image=working_image,
-        update_streamlit=True,
-        height=canvas_height,
-        width=canvas_width,
-        drawing_mode="rect",
-        point_display_radius=0,
-        key=f"canvas_{st.session_state.canvas_key}"
-    )
-
-    current_roi = parse_rect_bbox_from_canvas(
-        canvas_result, width, height, canvas_width, canvas_height
-    )
-
-    if current_roi is not None:
-        st.session_state.roi = current_roi
-
-    display_roi = current_roi if current_roi is not None else st.session_state.get("roi", None)
-
-    if display_roi is not None:
-
-        x1, y1, x2, y2 = display_roi
-        roi_width = x2 - x1
-        roi_height = y2 - y1
-
-        st.success(
-            f"已選擇 ROI  X: {x1} ~ {x2}  |  Y: {y1} ~ {y2}  |  "
-            f"ROI 尺寸: {roi_width} × {roi_height}"
-        )
-
-    else:
-        st.warning("尚未選擇 ROI，請在影像上拖曳矩形框。")
-
-    col1, col2, col3 = st.columns([1, 1, 2])
-
-    with col1:
-        detect_button = st.button("開始語意分割", type="primary", use_container_width=True)
-
-    with col2:
-        clear_button = st.button("清除 ROI", use_container_width=True)
-
-    if clear_button:
-        st.session_state.roi = None
-        st.session_state.prediction = None
-        st.session_state.original_prediction = None
-        st.session_state.mask_history = []
-        st.session_state.overlay = None
-        st.session_state.segmentation = None
-        st.session_state.roi_base_image = None
-        st.session_state.edge_map = None
-        st.session_state.edge_skeleton = None
-        st.session_state.edge_model_used = None
-        st.session_state.canvas_key += 1
-        st.session_state.correction_canvas_key += 1
-        st.rerun()
-
-    model = load_model()
-    # ========================================================
-    # AI 語意分割
-    # ========================================================
-
-    if detect_button:
-
-        roi = st.session_state.roi
-
-        if roi is None:
-            st.error("請先在影像上框選 ROI。")
-
-        else:
-
-            x1, y1, x2, y2 = roi
-
-            image_np = np.array(working_image)
-            roi_np = image_np[y1:y2, x1:x2]
-            roi_image = Image.fromarray(roi_np)
-
-            progress_text = st.empty()
-            progress_text.info("DeepLabV3-ResNet101 正在進行 ROI 語意分割...")
-
-            prediction_roi = predict_roi(roi_image, model, patch_size=512)
-
-            # 不再把預測結果擴回整張影像，直接保留 ROI 裁切後的大小，
-            # ROI 以外的區域整個捨棄。
-            segmentation_rgb = decode_segmap(prediction_roi, LABEL_COLORS_LIST)
-            overlay = create_overlay(roi_image, prediction_roi, roi=None)
-
-            st.session_state.prediction = prediction_roi
-            st.session_state.original_prediction = prediction_roi.copy()
-            st.session_state.mask_history = [prediction_roi.copy()]
-            st.session_state.segmentation = segmentation_rgb
-            st.session_state.overlay = overlay
-            st.session_state.roi_base_image = roi_image
-            st.session_state.correction_canvas_key += 1
-
-            progress_text.success("ROI 語意分割完成，可於下方進行人工修正。")
-
-    # ========================================================
-    # ② AI 分割結果
-    # ========================================================
-
-    if st.session_state.overlay is not None:
-
-        st.markdown("---")
-        st.subheader("③ Semantic Segmentation 結果")
-
-        result_col1, result_col2 = st.columns(2)
-
-        with result_col1:
-            st.image(
-                st.session_state.segmentation,
-                caption="Semantic Segmentation",
-                use_container_width=False
-            )
-
-        with result_col2:
-            st.image(
-                st.session_state.overlay,
-                caption="Original + Segmentation Overlay",
-                use_container_width=False
-            )
-
-        # ====================================================
-        # ③ AI 輔助人工修正（類似 CVAT）
-        # ====================================================
-
-        st.markdown("---")
-        st.subheader("④ 人工修正（多邊形 / 筆刷，類似 CVAT AI-assisted annotation）")
-
-        st.markdown(
-            class_legend_markdown(ALL_CLASSES, LABEL_COLORS_LIST),
-            unsafe_allow_html=True
-        )
-
-        st.info(
-            "選擇要標註的類別與工具後，在下方影像上畫出要修正的區域，"
-            "按「套用修正」即會寫入遮罩；若要清除某區域，選擇背景類別（index 0）畫過去即可。"
-        )
-
-        correction_col1, correction_col2, correction_col3 = st.columns([2, 2, 1])
-
-        with correction_col1:
-            class_options = list(enumerate(ALL_CLASSES))
-            selected_class_index = st.selectbox(
-                "標註類別",
-                options=[idx for idx, _ in class_options],
-                format_func=lambda idx: f"{idx}: {ALL_CLASSES[idx]}",
-                key="selected_class_index"
-            )
-
-        with correction_col2:
-            tool_mode_label = st.radio(
-                "修正工具",
-                options=["多邊形（填滿區域）", "筆刷（塗抹）"],
-                horizontal=True,
-                key="tool_mode_label"
-            )
-            tool_mode = "polygon" if tool_mode_label.startswith("多邊形") else "brush"
-
-        with correction_col3:
-            brush_size = st.slider(
-                "筆刷大小",
-                min_value=3,
-                max_value=80,
-                value=20,
-                disabled=(tool_mode != "brush")
-            )
-
-        correction_drawing_mode = "polygon" if tool_mode == "polygon" else "freedraw"
-        selected_color = LABEL_COLORS_LIST[selected_class_index]
-        selected_color_css = f"rgba({selected_color[0]},{selected_color[1]},{selected_color[2]},0.6)"
-
-        correction_background = Image.fromarray(st.session_state.overlay)
-
-        # 修正畫布是以「裁切後的 ROI 影像」為準，尺寸與 step② 選 ROI 用的
-        # 整張影像不同，所以另外計算一組縮放比例。
-        corr_width, corr_height = correction_background.size
-
-        corr_scale = min(
-            MAX_CANVAS_WIDTH / corr_width,
-            MAX_CANVAS_HEIGHT / corr_height,
+        scale = min(
+            MAX_CANVAS_WIDTH / width,
+            MAX_CANVAS_HEIGHT / height,
             1.0
         )
 
-        corr_canvas_width = int(corr_width * corr_scale)
-        corr_canvas_height = int(corr_height * corr_scale)
+        canvas_width = int(width * scale)
+        canvas_height = int(height * scale)
 
-        corr_scale_x = corr_width / float(corr_canvas_width)
-        corr_scale_y = corr_height / float(corr_canvas_height)
+        # 畫布座標 → 原始影像座標 的縮放係數
+        scale_x = width / float(canvas_width)
+        scale_y = height / float(canvas_height)
 
-        correction_canvas_result = st_canvas(
-            fill_color=selected_color_css,
-            stroke_width=brush_size if tool_mode == "brush" else 2,
-            stroke_color=selected_color_css,
-            background_image=correction_background,
+        # ========================================================
+        # ② 選擇語意分割區域 (ROI)
+        # ========================================================
+
+        st.markdown("---")
+        st.subheader("② 選擇語意分割區域")
+
+        st.info("請使用滑鼠在影像上拖曳矩形框，選擇需要進行 AI 語意分割的區域。")
+
+        canvas_result = st_canvas(
+            fill_color="rgba(255, 0, 0, 0.15)",
+            stroke_width=3,
+            stroke_color="#FF0000",
+            background_image=working_image,
             update_streamlit=True,
-            height=corr_canvas_height,
-            width=corr_canvas_width,
-            drawing_mode=correction_drawing_mode,
+            height=canvas_height,
+            width=canvas_width,
+            drawing_mode="rect",
             point_display_radius=0,
-            key=f"correction_canvas_{st.session_state.correction_canvas_key}"
+            key=f"canvas_{st.session_state.canvas_key}"
         )
 
-        apply_col, undo_col, reset_col = st.columns([1, 1, 1])
+        current_roi = parse_rect_bbox_from_canvas(
+            canvas_result, width, height, canvas_width, canvas_height
+        )
 
-        with apply_col:
-            apply_button = st.button(
-                "套用修正", type="primary", use_container_width=True
+        if current_roi is not None:
+            st.session_state.roi = current_roi
+
+        display_roi = current_roi if current_roi is not None else st.session_state.get("roi", None)
+
+        if display_roi is not None:
+
+            x1, y1, x2, y2 = display_roi
+            roi_width = x2 - x1
+            roi_height = y2 - y1
+
+            st.success(
+                f"已選擇 ROI  X: {x1} ~ {x2}  |  Y: {y1} ~ {y2}  |  "
+                f"ROI 尺寸: {roi_width} × {roi_height}"
             )
 
-        with undo_col:
-            undo_button = st.button(
-                "復原上一步", use_container_width=True,
-                disabled=(len(st.session_state.mask_history) <= 1)
-            )
+        else:
+            st.warning("尚未選擇 ROI，請在影像上拖曳矩形框。")
 
-        with reset_col:
-            reset_button = st.button(
-                "重設回 AI 原始結果", use_container_width=True
-            )
+        col1, col2, col3 = st.columns([1, 1, 2])
 
-        if apply_button:
+        with col1:
+            detect_button = st.button("開始語意分割", type="primary", use_container_width=True)
 
-            objects = []
+        with col2:
+            clear_button = st.button("清除 ROI", use_container_width=True)
 
-            if correction_canvas_result.json_data is not None:
-                objects = correction_canvas_result.json_data.get("objects", [])
+        if clear_button:
+            st.session_state.roi = None
+            st.session_state.prediction = None
+            st.session_state.original_prediction = None
+            st.session_state.mask_history = []
+            st.session_state.overlay = None
+            st.session_state.segmentation = None
+            st.session_state.roi_base_image = None
+            st.session_state.edge_map = None
+            st.session_state.edge_skeleton = None
+            st.session_state.edge_model_used = None
+            st.session_state.canvas_key += 1
+            st.session_state.correction_canvas_key += 1
+            st.rerun()
 
-            if len(objects) == 0:
-                st.warning("尚未在影像上畫出任何修正區域。")
+        model = load_model()
+        # ========================================================
+        # AI 語意分割
+        # ========================================================
+
+        if detect_button:
+
+            roi = st.session_state.roi
+
+            if roi is None:
+                st.error("請先在影像上框選 ROI。")
 
             else:
 
-                updated_mask = apply_correction_objects(
-                    st.session_state.prediction,
-                    objects,
-                    corr_scale_x,
-                    corr_scale_y,
-                    tool_mode,
-                    selected_class_index,
-                    brush_size
+                x1, y1, x2, y2 = roi
+
+                image_np = np.array(working_image)
+                roi_np = image_np[y1:y2, x1:x2]
+                roi_image = Image.fromarray(roi_np)
+
+                progress_text = st.empty()
+                progress_text.info("DeepLabV3-ResNet101 正在進行 ROI 語意分割...")
+
+                prediction_roi = predict_roi(roi_image, model, patch_size=512)
+
+                # 不再把預測結果擴回整張影像，直接保留 ROI 裁切後的大小，
+                # ROI 以外的區域整個捨棄。
+                segmentation_rgb = decode_segmap(prediction_roi, LABEL_COLORS_LIST)
+                overlay = create_overlay(roi_image, prediction_roi, roi=None)
+
+                st.session_state.prediction = prediction_roi
+                st.session_state.original_prediction = prediction_roi.copy()
+                st.session_state.mask_history = [prediction_roi.copy()]
+                st.session_state.segmentation = segmentation_rgb
+                st.session_state.overlay = overlay
+                st.session_state.roi_base_image = roi_image
+                st.session_state.correction_canvas_key += 1
+
+                progress_text.success("ROI 語意分割完成，可於下方進行人工修正。")
+
+        # ========================================================
+        # ② AI 分割結果
+        # ========================================================
+
+        if st.session_state.overlay is not None:
+
+            st.markdown("---")
+            st.subheader("③ Semantic Segmentation 結果")
+
+            result_col1, result_col2 = st.columns(2)
+
+            with result_col1:
+                st.image(
+                    st.session_state.segmentation,
+                    caption="Semantic Segmentation",
+                    use_container_width=False
                 )
 
-                st.session_state.mask_history.append(updated_mask.copy())
-                st.session_state.prediction = updated_mask
-
-                st.session_state.segmentation = decode_segmap(
-                    updated_mask, LABEL_COLORS_LIST
+            with result_col2:
+                st.image(
+                    st.session_state.overlay,
+                    caption="Original + Segmentation Overlay",
+                    use_container_width=False
                 )
+
+            # ====================================================
+            # ③ AI 輔助人工修正（類似 CVAT）
+            # ====================================================
+
+            st.markdown("---")
+            st.subheader("④ 人工修正（多邊形 / 筆刷，類似 CVAT AI-assisted annotation）")
+
+            st.markdown(
+                class_legend_markdown(ALL_CLASSES, LABEL_COLORS_LIST),
+                unsafe_allow_html=True
+            )
+
+            st.info(
+                "選擇要標註的類別與工具後，在下方影像上畫出要修正的區域，"
+                "按「套用修正」即會寫入遮罩；若要清除某區域，選擇背景類別（index 0）畫過去即可。"
+            )
+
+            correction_col1, correction_col2, correction_col3 = st.columns([2, 2, 1])
+
+            with correction_col1:
+                class_options = list(enumerate(ALL_CLASSES))
+                selected_class_index = st.selectbox(
+                    "標註類別",
+                    options=[idx for idx, _ in class_options],
+                    format_func=lambda idx: f"{idx}: {ALL_CLASSES[idx]}",
+                    key="selected_class_index"
+                )
+
+            with correction_col2:
+                tool_mode_label = st.radio(
+                    "修正工具",
+                    options=["多邊形（填滿區域）", "筆刷（塗抹）"],
+                    horizontal=True,
+                    key="tool_mode_label"
+                )
+                tool_mode = "polygon" if tool_mode_label.startswith("多邊形") else "brush"
+
+            with correction_col3:
+                brush_size = st.slider(
+                    "筆刷大小",
+                    min_value=3,
+                    max_value=80,
+                    value=20,
+                    disabled=(tool_mode != "brush")
+                )
+
+            correction_drawing_mode = "polygon" if tool_mode == "polygon" else "freedraw"
+            selected_color = LABEL_COLORS_LIST[selected_class_index]
+            selected_color_css = f"rgba({selected_color[0]},{selected_color[1]},{selected_color[2]},0.6)"
+
+            correction_background = Image.fromarray(st.session_state.overlay)
+
+            # 修正畫布是以「裁切後的 ROI 影像」為準，尺寸與 step② 選 ROI 用的
+            # 整張影像不同，所以另外計算一組縮放比例。
+            corr_width, corr_height = correction_background.size
+
+            corr_scale = min(
+                MAX_CANVAS_WIDTH / corr_width,
+                MAX_CANVAS_HEIGHT / corr_height,
+                1.0
+            )
+
+            corr_canvas_width = int(corr_width * corr_scale)
+            corr_canvas_height = int(corr_height * corr_scale)
+
+            corr_scale_x = corr_width / float(corr_canvas_width)
+            corr_scale_y = corr_height / float(corr_canvas_height)
+
+            correction_canvas_result = st_canvas(
+                fill_color=selected_color_css,
+                stroke_width=brush_size if tool_mode == "brush" else 2,
+                stroke_color=selected_color_css,
+                background_image=correction_background,
+                update_streamlit=True,
+                height=corr_canvas_height,
+                width=corr_canvas_width,
+                drawing_mode=correction_drawing_mode,
+                point_display_radius=0,
+                key=f"correction_canvas_{st.session_state.correction_canvas_key}"
+            )
+
+            apply_col, undo_col, reset_col = st.columns([1, 1, 1])
+
+            with apply_col:
+                apply_button = st.button(
+                    "套用修正", type="primary", use_container_width=True
+                )
+
+            with undo_col:
+                undo_button = st.button(
+                    "復原上一步", use_container_width=True,
+                    disabled=(len(st.session_state.mask_history) <= 1)
+                )
+
+            with reset_col:
+                reset_button = st.button(
+                    "重設回 AI 原始結果", use_container_width=True
+                )
+
+            if apply_button:
+
+                objects = []
+
+                if correction_canvas_result.json_data is not None:
+                    objects = correction_canvas_result.json_data.get("objects", [])
+
+                if len(objects) == 0:
+                    st.warning("尚未在影像上畫出任何修正區域。")
+
+                else:
+
+                    updated_mask = apply_correction_objects(
+                        st.session_state.prediction,
+                        objects,
+                        corr_scale_x,
+                        corr_scale_y,
+                        tool_mode,
+                        selected_class_index,
+                        brush_size
+                    )
+
+                    st.session_state.mask_history.append(updated_mask.copy())
+                    st.session_state.prediction = updated_mask
+
+                    st.session_state.segmentation = decode_segmap(
+                        updated_mask, LABEL_COLORS_LIST
+                    )
+                    st.session_state.overlay = create_overlay(
+                        st.session_state.roi_base_image, updated_mask, roi=None
+                    )
+
+                    st.session_state.correction_canvas_key += 1
+
+                    st.rerun()
+
+            if undo_button and len(st.session_state.mask_history) > 1:
+
+                st.session_state.mask_history.pop()
+                restored_mask = st.session_state.mask_history[-1].copy()
+
+                st.session_state.prediction = restored_mask
+                st.session_state.segmentation = decode_segmap(restored_mask, LABEL_COLORS_LIST)
                 st.session_state.overlay = create_overlay(
-                    st.session_state.roi_base_image, updated_mask, roi=None
+                    st.session_state.roi_base_image, restored_mask, roi=None
                 )
 
                 st.session_state.correction_canvas_key += 1
 
                 st.rerun()
 
-        if undo_button and len(st.session_state.mask_history) > 1:
+            if reset_button and st.session_state.original_prediction is not None:
 
-            st.session_state.mask_history.pop()
-            restored_mask = st.session_state.mask_history[-1].copy()
+                restored_mask = st.session_state.original_prediction.copy()
 
-            st.session_state.prediction = restored_mask
-            st.session_state.segmentation = decode_segmap(restored_mask, LABEL_COLORS_LIST)
-            st.session_state.overlay = create_overlay(
-                st.session_state.roi_base_image, restored_mask, roi=None
-            )
-
-            st.session_state.correction_canvas_key += 1
-
-            st.rerun()
-
-        if reset_button and st.session_state.original_prediction is not None:
-
-            restored_mask = st.session_state.original_prediction.copy()
-
-            st.session_state.prediction = restored_mask
-            st.session_state.mask_history = [restored_mask.copy()]
-            st.session_state.segmentation = decode_segmap(restored_mask, LABEL_COLORS_LIST)
-            st.session_state.overlay = create_overlay(
-                st.session_state.roi_base_image, restored_mask, roi=None
-            )
-
-            st.session_state.correction_canvas_key += 1
-
-            st.rerun()
-
-        # ====================================================
-        # ⑤ 邊緣偵測（PiDiNet / DiffusionEdge）
-        # ====================================================
-
-        st.markdown("---")
-        st.subheader("⑤ 邊緣偵測")
-
-        st.info(
-            "以目前的 Semantic Segmentation 結果（含人工修正）作為輸入，"
-            "偵測分割邊界的邊緣線。"
-        )
-
-        edge_col1, edge_col2 = st.columns([2, 1])
-
-        with edge_col1:
-            edge_model_choice = st.radio(
-                "邊緣偵測模型",
-                options=["PiDiNet", "DiffusionEdge"],
-                horizontal=True,
-                key="edge_model_choice"
-            )
-
-        with edge_col2:
-            run_edge_button = st.button(
-                "執行邊緣偵測", use_container_width=True
-            )
-
-        if run_edge_button:
-
-            if edge_model_choice == "PiDiNet":
-
-                edge_progress = st.empty()
-                edge_progress.info("PiDiNet 正在偵測邊緣...")
-
-                edge_map = run_pidinet_edge_detection(st.session_state.segmentation)
-
-                st.session_state.edge_map = edge_map
-
-                st.session_state.edge_model_used = "PiDiNet"
-
-                edge_progress.success("PiDiNet 邊緣偵測完成。")
-
-            else:
-
-                edge_progress = st.empty()
-                edge_progress.info(
-                    "DiffusionEdge 正在偵測邊緣，這是擴散模型，推論會比 PiDiNet"
-                    "慢上不少，請耐心等候（畫面看起來像卡住是正常的）..."
+                st.session_state.prediction = restored_mask
+                st.session_state.mask_history = [restored_mask.copy()]
+                st.session_state.segmentation = decode_segmap(restored_mask, LABEL_COLORS_LIST)
+                st.session_state.overlay = create_overlay(
+                    st.session_state.roi_base_image, restored_mask, roi=None
                 )
 
-                try:
-                    edge_map = run_diffusionedge_edge_detection(
-                        st.session_state.segmentation
-                    )
+                st.session_state.correction_canvas_key += 1
+
+                st.rerun()
+
+            # ====================================================
+            # ⑤ 邊緣偵測（PiDiNet / DiffusionEdge）
+            # ====================================================
+
+            st.markdown("---")
+            st.subheader("⑤ 邊緣偵測")
+
+            st.info(
+                "以目前的 Semantic Segmentation 結果（含人工修正）作為輸入，"
+                "偵測分割邊界的邊緣線。"
+            )
+
+            edge_col1, edge_col2 = st.columns([2, 1])
+
+            with edge_col1:
+                edge_model_choice = st.radio(
+                    "邊緣偵測模型",
+                    options=["PiDiNet", "DiffusionEdge"],
+                    horizontal=True,
+                    key="edge_model_choice"
+                )
+
+            with edge_col2:
+                run_edge_button = st.button(
+                    "執行邊緣偵測", use_container_width=True
+                )
+
+            if run_edge_button:
+
+                if edge_model_choice == "PiDiNet":
+
+                    edge_progress = st.empty()
+                    edge_progress.info("PiDiNet 正在偵測邊緣...")
+
+                    edge_map = run_pidinet_edge_detection(st.session_state.segmentation)
 
                     st.session_state.edge_map = edge_map
-                    st.session_state.edge_model_used = "DiffusionEdge"
 
-                    edge_progress.success("DiffusionEdge 邊緣偵測完成。")
+                    st.session_state.edge_model_used = "PiDiNet"
 
-                except Exception as exc:
-                    edge_progress.empty()
-                    st.error(f"DiffusionEdge 執行失敗：{exc}")
+                    edge_progress.success("PiDiNet 邊緣偵測完成。")
 
-        if st.session_state.edge_map is not None:
+                else:
+
+                    edge_progress = st.empty()
+                    edge_progress.info(
+                        "DiffusionEdge 正在偵測邊緣，這是擴散模型，推論會比 PiDiNet"
+                        "慢上不少，請耐心等候（畫面看起來像卡住是正常的）..."
+                    )
+
+                    try:
+                        edge_map = run_diffusionedge_edge_detection(
+                            st.session_state.segmentation
+                        )
+
+                        st.session_state.edge_map = edge_map
+                        st.session_state.edge_model_used = "DiffusionEdge"
+
+                        edge_progress.success("DiffusionEdge 邊緣偵測完成。")
+
+                    except Exception as exc:
+                        edge_progress.empty()
+                        st.error(f"DiffusionEdge 執行失敗：{exc}")
+
+            if st.session_state.edge_map is not None:
 
 
-            st.image(
-                st.session_state.edge_map,
-                caption=f"邊緣機率圖（{st.session_state.edge_model_used}）",
-                use_container_width=False
-            )
+                st.image(
+                    st.session_state.edge_map,
+                    caption=f"邊緣機率圖（{st.session_state.edge_model_used}）",
+                    use_container_width=False
+                )
 
 
-        # ====================================================
-        # ⑥ 下載結果
-        # ====================================================
+            # ====================================================
+            # ⑥ 下載結果
+            # ====================================================
 
-        st.markdown("---")
-        st.markdown("### 下載結果")
+            st.markdown("---")
+            st.markdown("### 下載結果")
 
-        segmentation_pil = Image.fromarray(st.session_state.segmentation)
-        segmentation_buffer = io.BytesIO()
-        segmentation_pil.save(segmentation_buffer, format="PNG")
+            segmentation_pil = Image.fromarray(st.session_state.segmentation)
+            segmentation_buffer = io.BytesIO()
+            segmentation_pil.save(segmentation_buffer, format="PNG")
 
-        overlay_pil = Image.fromarray(st.session_state.overlay)
-        overlay_buffer = io.BytesIO()
-        overlay_pil.save(overlay_buffer, format="PNG")
+            overlay_pil = Image.fromarray(st.session_state.overlay)
+            overlay_buffer = io.BytesIO()
+            overlay_pil.save(overlay_buffer, format="PNG")
 
-        indexed_mask_pil = Image.fromarray(st.session_state.prediction)
-        indexed_mask_buffer = io.BytesIO()
-        indexed_mask_pil.save(indexed_mask_buffer, format="PNG")
+            indexed_mask_pil = Image.fromarray(st.session_state.prediction)
+            indexed_mask_buffer = io.BytesIO()
+            indexed_mask_pil.save(indexed_mask_buffer, format="PNG")
 
-        download_col1, download_col2 = st.columns(2)
+            download_col1, download_col2 = st.columns(2)
 
-        with download_col1:
-            st.download_button(
-                label="下載 Segmentation Mask",
-                data=segmentation_buffer.getvalue(),
-                file_name="segmentation.png",
-                mime="image/png",
-                use_container_width=True
-            )
+            with download_col1:
+                st.download_button(
+                    label="下載 Segmentation Mask",
+                    data=segmentation_buffer.getvalue(),
+                    file_name="segmentation.png",
+                    mime="image/png",
+                    use_container_width=True
+                )
 
-        with download_col2:
-            st.download_button(
-                label="下載 Overlay",
-                data=overlay_buffer.getvalue(),
-                file_name="overlay.png",
-                mime="image/png",
-                use_container_width=True
-            )
+            with download_col2:
+                st.download_button(
+                    label="下載 Overlay",
+                    data=overlay_buffer.getvalue(),
+                    file_name="overlay.png",
+                    mime="image/png",
+                    use_container_width=True
+                )
 
-        if st.session_state.edge_map is not None:
+            if st.session_state.edge_map is not None:
 
-            edge_map_pil = Image.fromarray(st.session_state.edge_map)
-            edge_map_buffer = io.BytesIO()
-            edge_map_pil.save(edge_map_buffer, format="PNG")
+                edge_map_pil = Image.fromarray(st.session_state.edge_map)
+                edge_map_buffer = io.BytesIO()
+                edge_map_pil.save(edge_map_buffer, format="PNG")
 
-            st.download_button(
-                label="下載邊緣機率圖",
-                data=edge_map_buffer.getvalue(),
-                file_name="edge_map.png",
-                mime="image/png",
-                use_container_width=True
-            )
+                st.download_button(
+                    label="下載邊緣機率圖",
+                    data=edge_map_buffer.getvalue(),
+                    file_name="edge_map.png",
+                    mime="image/png",
+                    use_container_width=True
+                )
+
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import os
+from pathlib import Path
+from resnet_DCGAN import binary
+
+BASE_DIR = Path(__file__).resolve().parent
+INFER_SCRIPT = BASE_DIR / "resnet_DCGAN" / "infer.py"
+CKPT_PATH = BASE_DIR / "resnet_DCGAN" / "generator.pt"
+OUT_DIR = BASE_DIR / "output"
+
+with main_tab2:
+    st.header("岸線變遷分析模組")
+    st.markdown(
+        "上傳多張不同年份的影像（檔名需為年份，例如 `2013.png`），"
+        "系統會以已訓練的生成模型預測未來年份的影像。"
+    )
+
+    uploaded_files = st.file_uploader(
+        "請上傳多年份影像",
+        type=["jpg", "jpeg", "png", "bmp", "tif", "tiff"],
+        accept_multiple_files=True,
+        key="change_uploader",
+    )
+
+    valid_files = []
+    for file in uploaded_files or []:
+        if re.fullmatch(r"(19|20)\d{2}\.(jpg|jpeg|png|bmp|tif|tiff)", file.name, re.IGNORECASE):
+            valid_files.append(file)
+        else:
+            st.error(f"檔名格式錯誤：{file.name}，請使用例如 2013.png 或 2024.jpg 的格式。")
+
+    n_future = st.number_input("預測年數", min_value=1, max_value=12, value=6, key="n_future")
+
+    run_forecast = st.button(
+        "開始預測", type="primary", key="run_forecast",
+        disabled=len(valid_files) == 0,
+    )
+
+    if run_forecast:
+        if not CKPT_PATH.exists():
+            st.error(f"找不到權重檔：{CKPT_PATH}")
+        else:
+            with tempfile.TemporaryDirectory() as tmp:
+                for f in valid_files:
+                    (Path(tmp) / f.name).write_bytes(f.getbuffer())
+
+                shutil.rmtree(OUT_DIR, ignore_errors=True)
+
+                env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+                with st.spinner("模型推論中，請稍候..."):
+                    result = subprocess.run(
+                        [
+                            sys.executable, str(INFER_SCRIPT),
+                            "--data_dir", tmp,
+                            "--ckpt", str(CKPT_PATH),
+                            "--out_dir", str(OUT_DIR),
+                            "--n_future", str(int(n_future)),
+                        ],
+                        capture_output=True, text=True,
+                        encoding="utf-8", errors="replace",
+                        cwd=str(INFER_SCRIPT.parent), env=env,
+                    )
+
+            if result.returncode == 0:
+                st.success("預測完成")
+                for p in sorted(OUT_DIR.glob("pred_*.png")):
+                    st.image(str(p), caption=p.stem.replace("pred_", "預測 "), width="stretch")
+                for p in sorted(OUT_DIR.glob("std_*.png")):
+                                    st.image(str(p), caption=p.stem.replace("std_", "標準差 "), width="stretch")
+                with st.expander("執行紀錄"):
+                    st.text(result.stdout)
+            else:
+                st.error("程式執行失敗")
+                st.text_area("錯誤訊息", result.stderr or result.stdout, height=300)
+
+with main_tab3:
+    st.header("關於本系統")
+    st.markdown(
+        """
+        本系統為 台灣世曦 **港灣部** *深度學習於岸線變遷之應用與分析預測模組之研發－以旗津海岸為例 (IV~VI)*
+        一案之應用平台，旨在提供 DeepLabV3-ResNet101 模型的進行海岸偵測功能，並結合DiffusionEdge模型進行岸線變遷分析。
+
+        **岸線偵測模組** 採用 DeepLabV3-ResNet101 進行語意分割，並支援 AI 輔助人工修正（操作方式類似 [CVAT](https://www.cvat.ai/) 的語意分割標註工具）。
+
+        **岸線變遷分析模組** 採用 Resnet-DCGAN 生成模型，使用多年份影像作為輸入，預測未來年份的影像。
+
+        本系統由 [Cijin](https://github.com/Cijin) 開發。
+
+        """)
