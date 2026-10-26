@@ -783,6 +783,6 @@ with main_tab3:
 
         **岸線變遷分析模組** 採用 Resnet-DCGAN 生成模型，使用多年份影像作為輸入，預測未來年份的影像。
 
-        本系統由 [Cijin](https://github.com/Cijin) 開發。
+        本系統由 [KSE108](https://github.com/ksuee108/Cijin) 開發。
 
         """)
