@@ -1,0 +1,11 @@
+{
+  "k": 3,
+  "ngf": 64,
+  "n_resblocks": 6,
+  "residual": true,
+  "color_match": "meanstd",
+  "sites": [
+    "海水浴場",
+    "風車公園"
+  ]
+}

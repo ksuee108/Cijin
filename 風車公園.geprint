@@ -1,12 +1,12 @@
 [General]
 version=2
-scaling_factor=1
+scaling_factor=0.11
 print_type=0
 print_quality=9
 save_image_quality=1
 print_flags=0
 color_mode=0
-camera="@ByteArray(<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n<Placemark>\n\t<LookAt>\n\t\t<gx:TimeStamp><when>2025-04-14</when>\n</gx:TimeStamp>\n\t\t<gx:ViewerOptions>\n\t\t\t<gx:option name=\"historicalimagery\"></gx:option>\n\t\t\t<gx:option enabled=\"0\" name=\"sunlight\"></gx:option>\n\t\t\t<gx:option enabled=\"0\" name=\"streetview\"></gx:option>\n\t\t</gx:ViewerOptions>\n\t\t<longitude>120.281053880508</longitude>\n\t\t<latitude>22.59150169846053</latitude>\n\t\t<altitude>0</altitude>\n\t\t<heading>0.004527629988586137</heading>\n\t\t<tilt>2.460095785423159</tilt>\n\t\t<range>2310.058494653218</range>\n\t\t<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>\n\t</LookAt>\n</Placemark>\n</kml>\n)"
+camera="@ByteArray(<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n<Placemark>\n\t<LookAt>\n\t\t<gx:TimeStamp><when>2025-04-14</when>\n</gx:TimeStamp>\n\t\t<gx:ViewerOptions>\n\t\t\t<gx:option name=\"historicalimagery\"></gx:option>\n\t\t\t<gx:option enabled=\"0\" name=\"sunlight\"></gx:option>\n\t\t\t<gx:option enabled=\"0\" name=\"streetview\"></gx:option>\n\t\t</gx:ViewerOptions>\n\t\t<longitude>120.2846685501331</longitude>\n\t\t<latitude>22.59113402739707</latitude>\n\t\t<altitude>0</altitude>\n\t\t<heading>0.005915953954367796</heading>\n\t\t<tilt>2.460094895612546</tilt>\n\t\t<range>2307.726963646255</range>\n\t\t<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>\n\t</LookAt>\n</Placemark>\n</kml>\n)"
 
 [Title%20and%20Description]
 Layout\size=@Size(189 84)

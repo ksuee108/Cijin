@@ -291,6 +291,8 @@ def validate_with_metrics(preds, ds, args, px_m=None):
         used_gt = used_gt or (mt is not None)
         r = evaluate_one(p, ds.imgs[y], ref, px_m, mask_true=mt, mask_ref=mr)
         save_overlay(ds.imgs[y], r["_shore"], os.path.join(args.out_dir, f"overlay_{y}.png"))
+        # 同樣的三條岸線，疊在「預測圖」上 (看預測圖的瑕疵與岸線的關係)
+        save_overlay(p, r["_shore"], os.path.join(args.out_dir, f"overlay_pred_{y}.png"))
         for who in ("model", "persistence"):
             rows.append({"year": y, "who": who, **r[who]})
         if "seg_floor" in r:
@@ -336,7 +338,7 @@ def validate_with_metrics(preds, ds, args, px_m=None):
         print(" - seg_floor: 對「真實影像」做同樣的顏色分割與真實遮罩的差距, 是預測圖岸線量測的誤差下限;")
         print("   模型的岸線誤差若與 seg_floor 同量級, 差異可能只是分割誤差, 不是預測誤差")
         print(" - persistence 的岸線直接取自真實遮罩 (無分割誤差), 模型則含分割誤差, 對模型略不利")
-    print(f"\n輸出: {args.out_dir}/metrics.csv, metrics.json, overlay_<year>.png")
+    print(f"\n輸出: {args.out_dir}/metrics.csv, metrics.json, overlay_<year>.png (疊在真實圖), overlay_pred_<year>.png (疊在預測圖)")
     print("overlay 顏色: 黃=訓練末年岸線, 綠=真實岸線, 紅=預測岸線")
 
 

@@ -23,5 +23,4 @@ thop
 timm==0.6.12
 omegaconf
 numpy==1.23.5
-
 torchaudio --index-url https://download.pytorch.org/whl/cu126

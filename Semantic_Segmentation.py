@@ -56,6 +56,9 @@ def load_model():
     return model
 
 
+
+
+
 # ============================================================
 # 影像處理函式
 # ============================================================
@@ -231,13 +234,26 @@ def create_overlay(original_image, prediction, roi=None, alpha=0.5):
 def extract_path_points(obj):
     """
     從 streamlit-drawable-canvas 回傳的 fabric.js 物件中取出座標點列表。
-    適用於 freedraw（筆刷）與 polygon（多邊形）兩種 drawing_mode。
+
+    - 筆刷（freedraw）：type 為 "Path"，座標在 obj["path"]（M / L / Q ... 指令）。
+    - 多邊形（polygon）：type 為 "Polygon"，座標在 obj["points"]（[{x, y}, ...]），
+      沒有 "path" 欄位，所以必須另外處理，否則會取不到任何點、mask 完全沒變化。
     """
 
-    path_data = obj.get("path", [])
     points = []
 
-    for command in path_data:
+    raw_points = obj.get("points")
+
+    if raw_points:
+        for pt in raw_points:
+            if isinstance(pt, dict):
+                points.append((float(pt["x"]), float(pt["y"])))
+            elif isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                points.append((float(pt[0]), float(pt[1])))
+
+        return points
+
+    for command in obj.get("path", []):
 
         if len(command) < 2:
             continue
